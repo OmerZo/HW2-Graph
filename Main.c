@@ -8,11 +8,6 @@ typedef struct interval
 	int x, y, color, name, degree;
 } Interval;
 
-//typedef struct vertex
-//{
-//	int x, y;
-//} Vertex;
-
 typedef struct node
 {
 	Interval* inter;
@@ -20,33 +15,20 @@ typedef struct node
 } Node;
 
 
-
-
-
-
-
-
-
-void main()
+Node** getIntervals(int k)
 {
-	GreedyColoring();
-}
+	int i;
+	Node** arr = NULL;
+	Interval* inter = NULL;
+	Node* node = NULL;
 
-
-
-void GreedyColoring()
-{
-	int k, i, j;
-	printf("Please input k\n");
-	scanf_s("%d", &k);
-	Node** arr = (Node**)malloc(sizeof(Node*) * k);
-
+	arr = (Node**)malloc(sizeof(Node*) * k);
 
 	printf("You will now be asked to insert a family of %d intervals:\n", k);
 	for (i = 0; i < k; i++)
 	{
-		Interval* inter = (Interval*)malloc(sizeof(Interval));
-		Node* node = (Node*)malloc(sizeof(Node));
+		inter = (Interval*)malloc(sizeof(Interval));
+		node = (Node*)malloc(sizeof(Node));
 		node->inter = inter;
 		node->next = NULL;
 
@@ -54,50 +36,99 @@ void GreedyColoring()
 		scanf_s("%d %d", &inter->x, &inter->y);
 		inter->color = 0;
 		inter->degree = 0;
-		inter->name = i + 1;
 		arr[i] = node;
 	}
+	return arr;
+}
+
+void printIntervals(Node** arr, int k)
+{
+	int i;
+	Interval* current = NULL;
 
 	printf("The Intervals family is:\n");
-	Interval* current = arr[0]->inter;
-	Interval* temp = NULL;
-	printf("%d[%d,%d]", current->name, current->x, current->y);
-
-	for (j = 1; j < k; j++)
-	{
-		temp = arr[j]->inter;
-		if (temp->y > current->x&& current->y > temp->x)
-		{
-			Interval* inter = (Interval*)malloc(sizeof(Interval));
-			Node* node = (Node*)malloc(sizeof(Node));
-			inter->x = temp->x;
-			inter->y = temp->y;
-			inter->name = temp->name;
-			inter->color = 0;
-			node->inter = inter;
-			node->next = arr[0]->next;
-			arr[0]->next = node;
-			current->degree++;
-		}
-	}
-
+	current = arr[0]->inter;
+	printf("[%d,%d]" , current->x, current->y);
 	for (i = 1; i < k; i++)
 	{
 		current = arr[i]->inter;
-		printf(" ,%d[%d,%d]", current->name, current->x, current->y);
+		printf(",[%d,%d]" , current->x, current->y);
+	}
+
+}
+
+void swap(Node* a, Node* b)
+{
+	Node t = *a;
+	*a = *b;
+	*b = t;
+}
+
+int partition(Node** arr, int low, int high)
+{
+	int i, j;
+	Node* pivot = NULL;
+	
+	pivot = arr[high];
+	i = (low - 1);
+
+	for (j = low; j <= high - 1; j++)
+	{
+		if (arr[j]->inter->x < pivot->inter->x)
+		{
+			i++;
+			swap(arr[i], arr[j]);
+		}
+	}
+	swap(arr[i + 1], arr[high]);
+	return (i + 1);
+}
+
+void quickSort(Node** arr, int low, int high)
+{
+	if (low < high)
+	{
+		int pi = partition(arr, low, high);
+		quickSort(arr, low, pi - 1);
+		quickSort(arr, pi + 1, high);
+	}
+}
+
+void nameIntervals(Node** arr, int k)
+{
+	int i;
+	
+	for (i = 0; i < k; i++)
+	{
+		arr[i]->inter->name = i + 1;
+	}
+}
+
+void createNeighbors(Node** arr, int k)
+{
+	int i, j;
+	Interval* current = NULL;
+	Interval* temp = NULL;
+	Interval* inter = NULL;
+	Node* node = NULL;
+
+	for (i = 0; i < k; i++)
+	{
+		current = arr[i]->inter;
+
 		for (j = 0; j < k; j++)
 		{
-			if (j != i)
+			if (i != j)
 			{
 				temp = arr[j]->inter;
-				if (temp->y > current->x&& current->y > temp->x)
+				if ((temp->y > current->x) && (current->y > temp->x))
 				{
-					Interval* inter = (Interval*)malloc(sizeof(Interval));
-					Node* node = (Node*)malloc(sizeof(Node));
+					node = (Node*)malloc(sizeof(Node));
+					inter = (Interval*)malloc(sizeof(Interval));
 					inter->x = temp->x;
 					inter->y = temp->y;
 					inter->name = temp->name;
-					inter->color = 0;
+					inter->color = temp->color;
 					node->inter = inter;
 					node->next = arr[i]->next;
 					arr[i]->next = node;
@@ -106,30 +137,17 @@ void GreedyColoring()
 			}
 		}
 	}
-	printf("\n\n");
+}
 
-	//print arr of lists
-	Node* node = NULL;
+void colorIntervals(Node** arr, int k)
+{
+	int i, j;
 	Interval* inter = NULL;
-	for (i = 0; i < k; i++)
-	{
-		node = arr[i];
-		inter = node->inter;
-		printf("%d [%d,%d]", inter->name, inter->x, inter->y);
-		node = node->next;
-		while (node != NULL)
-		{
-			inter = node->inter;
-			printf(" --> %d [%d,%d]", inter->name, inter->x, inter->y);
-			node = node->next;
-		}
-		printf("\n");
-	}
-
+	Node* node = NULL;
+	int* used_color = NULL;
 
 	node = arr[0];
 	inter = node->inter;
-	int* used_color = NULL;
 	inter->color = 1;
 	for (i = 1; i < k; i++)
 	{
@@ -140,11 +158,10 @@ void GreedyColoring()
 		{
 
 			inter = node->inter;
-			if(arr[inter->name - 1]->inter->color != 0)
+			if (arr[inter->name - 1]->inter->color != 0)
 				used_color[arr[inter->name - 1]->inter->color - 1] = 1;
 			node = node->next;
 		}
-
 
 		for (j = 0; j < arr[i]->inter->degree + 1; j++)
 		{
@@ -156,36 +173,138 @@ void GreedyColoring()
 		}
 		free(used_color);
 	}
+}
 
-
-
-	//print
-	node = NULL;
-	inter = NULL;
+int printInfo(Node** arr, int k)
+{
+	int i;
 	int maxDeg = 0, minDeg = k, maxColor = 0, sumDeg = 0;
+	Node* node = NULL;
+	Interval* inter = NULL;
+
 	for (i = 0; i < k; i++)
 	{
 		node = arr[i];
 		inter = node->inter;
-		printf("\n%d [%d,%d] color = %d", inter->name, inter->x, inter->y, inter->color);
 		sumDeg += inter->degree;
 		maxDeg = (maxDeg > inter->degree) ? maxDeg : inter->degree;
 		minDeg = (minDeg < inter->degree) ? minDeg : inter->degree;
 		maxColor = (maxColor > inter->color) ? maxColor : inter->color;
-		node = node->next;
-		//while (node != NULL)
-		//{
-		//	inter = node->inter;
-		//	printf(" --> %d [%d,%d]", inter->name, inter->x, inter->y);
-		//	node = node->next;
-		//}
 	}
+
 	printf("\nG Edges = %d\n", sumDeg / 2);
 	printf("Maximum Degree of G = %d\n", maxDeg);
 	printf("Minumum Degree of G = %d\n", minDeg);
 	printf("Chromatic Number of G = %d\n", maxColor);
-	printf("G's Comlement Edges = %d\n", ((k* (k - 1)) / 2) - (sumDeg / 2));
-	printf("Minimum Degree of G's Comlement = %d\n", k - minDeg - 1);
-	printf("Minumum Degree of G's Comlement = %d\n", k - maxDeg - 1);
+	printf("G's Complement Edges = %d\n", ((k * (k - 1)) / 2) - (sumDeg / 2));
+	printf("Maximum Degree of G's Complement = %d\n", k - minDeg - 1);
+	printf("Minumum Degree of G's Complement = %d\n", k - maxDeg - 1);
 
+	return maxColor;
+}
+
+void printOptionalColoring(Node** arr, int k, int maxColor)
+{
+	int i, j, flag = 0;
+	Interval* inter = NULL;
+	int** optColor = (int**)malloc(sizeof(int*) * maxColor);
+	for (i = 0; i < maxColor; i++)
+	{
+		optColor[i] = (int*)malloc(sizeof(int) * k);
+	}
+
+	for (i = 0; i < k; i++)
+	{
+		inter = arr[i]->inter;
+		optColor[inter->color - 1][inter->name - 1] = 1;
+	}
+
+	printf("Optional Coloring: ");
+	for (i = 0; i < maxColor; i++)
+	{
+		printf(i == 0 ? "{" : ", {");
+		for (j = 0; j < k; j++)
+		{
+			if (optColor[i][j] == 1)
+			{
+				printf(flag == 0 ? "[%d,%d]" : ",[%d,%d]", arr[j]->inter->x, arr[j]->inter->y);
+				flag = 1;
+			}
+		}
+		flag = 0;
+		printf("} = %d", i + 1);
+		free(optColor[i]);
+	}
+	free(optColor);
+
+}
+
+void freeMemory(Node** arr, int k)
+{
+	int i;
+	Node* node = NULL;
+	Node* temp = NULL;
+
+	for (i = 0; i < k; i++)
+	{
+		node = arr[i];
+		while (node != NULL)
+		{
+			temp = node;
+			free(node->inter);
+			node = node->next;
+			free(temp);
+		}
+	}
+
+	free(arr);
+}
+
+void printAdjacencyList(Node** arr, int k)
+{
+	int i;
+	Node* node = NULL;
+	Interval* inter = NULL;
+
+	for (i = 0; i < k; i++)
+	{
+		node = arr[i];
+		inter = node->inter;
+
+		printf("\n%d [%d,%d] color = %d", inter->name, inter->x, inter->y, inter->color);
+		node = node->next;
+		while (node != NULL)
+		{
+			inter = node->inter;
+			printf(" ---> %d [%d,%d]", inter->name, inter->x, inter->y);
+			node = node->next;
+		}
+	}
+}
+
+void main()
+{
+	GreedyColoring();
+}
+
+
+void GreedyColoring()
+{
+	int k, maxColor;
+	Node** arr = NULL;
+	printf("Please input k\n");
+	scanf_s("%d", &k);
+
+
+	arr = getIntervals(k);
+	printIntervals(arr, k);
+	quickSort(arr, 0, k - 1);
+	nameIntervals(arr, k);
+	createNeighbors(arr, k);
+	colorIntervals(arr, k);
+	maxColor = printInfo(arr, k);
+	printOptionalColoring(arr, k, maxColor);
+	printf("\n");
+	//printAdjacencyList(arr, k);
+	freeMemory(arr, k);
 }
