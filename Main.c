@@ -282,11 +282,16 @@ void printAdjacencyList(Node** arr, int k)
 	}
 }
 
+
+//
+
+//
+
+//
 void main()
 {
 	GreedyColoring();
 }
-
 
 void GreedyColoring()
 {
